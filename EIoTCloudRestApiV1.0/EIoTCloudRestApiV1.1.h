@@ -16,12 +16,12 @@ Changelog
              Consolidated cpp code into the header. Modified to use _DEBUG define (MSVC++ standard) instead of DEBUG
 31.08.2016 - @micooke : Consolidated all API calls into two main functions. 
              Changed TokenList to use the Vector class (https://github.com/zacsketches/Arduino_Vector)
-			 Added SetParameterValues(Vector<String> Id, Vector<String> Value)
+			 Added SetParameterValues(Vector<String> &Id, Vector<String> &Value)
 */
 #ifndef EIoTCloudRestApi_h
 #define EIoTCloudRestApi_h
 
-#include <Vector\Vector.h>
+#include <Vector.h>
 #include <ESP8266WiFi.h>
 
 #ifdef _DEBUG
@@ -103,7 +103,7 @@ public:
 	String GetParameterValue(String id) { return getParameterProperty(id, "Value"); }
 
 	bool SetParameterValues(String values);
-	bool SetParameterValues(Vector<String> Id, Vector<String> Value);
+	bool SetParameterValues(Vector<String> &Id, Vector<String> &Value);
 
 private:
 	String parseId(String response);
@@ -187,10 +187,17 @@ String EIoTCloudRestApi::RestApi_Instance(String getORpost, String command, Stri
 {
 	WiFiClient client;
 
+	uint8_t connection_attempts = 0;
 	while (!client.connect(_EIoT_Address.c_str(), _EIoT_Port))
 	{
 		debugln(F("connection failed"));
 		wifiConnect();
+		
+		if (++connection_attempts > _wifi_max_attempts)
+		{
+			debugln("RestApi_Instance : Maximum client connection attempts reached.\nReturning to main program");
+			return "";
+		}
 	}
 
 	// Generate the RestApi command
@@ -220,10 +227,17 @@ String EIoTCloudRestApi::RestApi_AuthToken(String getORpost, String id, String c
 {
 	WiFiClient client;
 
+	uint8_t connection_attempts = 0;
 	while (!client.connect(_EIoT_Address.c_str(), _EIoT_Port))
 	{
 		debugln(F("connection failed"));
 		wifiConnect();
+		
+		if (++connection_attempts > _wifi_max_attempts)
+		{
+			debugln("RestApi_AuthToken : Maximum client connection attempts reached.\nReturning to main program");
+			return "";
+		}
 	}
 
 	// Generate the RestApi command
@@ -253,13 +267,11 @@ String EIoTCloudRestApi::RestApi_AuthToken(String getORpost, String id, String c
 
 	// Get the RestApi response
 	while (!client.available());
-	debugln("*****");
 	String response = "";
 	while (client.available())
 	{
 		response += client.readStringUntil('\r');
 	}
-	debugln("#####");
 	return response;
 }
 
@@ -464,7 +476,7 @@ bool EIoTCloudRestApi::SetParameterValues(String values)
 	return parseResponse(response);
 }
 
-bool EIoTCloudRestApi::SetParameterValues(Vector<String> Id, Vector<String> Value)
+bool EIoTCloudRestApi::SetParameterValues(Vector<String> &Id, Vector<String> &Value)
 {
 	String content = "[{\"Id\": \"" + Id[0] + "\", \"Value\": \"" + Value[0] + "\" }";
 	for (uint8_t i = 1; i < Id.size(); ++i)

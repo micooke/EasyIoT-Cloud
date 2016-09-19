@@ -12,6 +12,7 @@
 //#include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <EEPROM.h>
+#include <Vector.h>
 //#include <EIoTCloudRestApiV1.0.h>
 #include <EIoTCloudRestApiV1.1.h>
 
@@ -188,7 +189,7 @@ bool EIoT_setup()
 		DEBUG_PRINTLN(valueRet2);
 
 		//set unit
-		// see http://meyerweb.com/eric/tools/dencoder/ how to encode °C 
+		// see http://meyerweb.com/eric/tools/dencoder/ how to encode ï¿½C 
 		bool valueRet3 = eiotcloud.SetParameterUnit(storage.parameterId1, "%C2%B0C");
 		DEBUG_PRINT("SetParameterUnit: ");
 		DEBUG_PRINTLN(valueRet3);
